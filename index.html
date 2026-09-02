@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Commander 2</title>
+    <style>
+      :root {
+        --bg-primary: #0f172a;
+        --bg-secondary: #1e293b;
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --accent: #22c55e;
+        --accent-hover: #16a34a;
+        --danger: #ef4444;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid rgba(248, 250, 252, 0.08);
+      }
+
+      h1 {
+        font-size: 1.1rem;
+        margin: 0;
+      }
+
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem;
+      }
+
+      .install-btn {
+        border: 0;
+        border-radius: 0.5rem;
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        background: var(--accent);
+        color: #052e16;
+        cursor: pointer;
+      }
+
+      .install-btn:hover {
+        background: var(--accent-hover);
+      }
+
+      .install-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
+      #install-status {
+        margin-top: 1rem;
+        color: var(--text-secondary);
+      }
+
+      #install-status.success {
+        color: #86efac;
+      }
+
+      #install-status.error {
+        color: var(--danger);
+      }
+
+      #install-status a {
+        color: #93c5fd;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Project Commander 2</h1>
+      <button id="install-btn" class="install-btn" type="button">Install</button>
+    </header>
+
+    <main>
+      <p>
+        Organize, complete, and back up projects with a simple AI-powered workflow.
+      </p>
+      <div id="install-status" role="status" aria-live="polite"></div>
+    </main>
+
+    <script src="./scripts/install-button.js"></script>
+  </body>
+</html>
