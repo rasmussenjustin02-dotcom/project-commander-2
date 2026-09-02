@@ -288,8 +288,10 @@
             },
             config: {
                 openrouterKey: '',
+                openrouterKeySet: false,
                 openrouterModel: 'openai/gpt-4o-mini',
                 atlasKey: '',
+                atlasKeySet: false,
                 atlasUrl: 'https://api.atlasai.co/v1/images/generations',
                 atlasModel: 'atlas-image-1',
                 defaultTextProvider: '',
@@ -302,20 +304,26 @@
         if (!raw) return defaults;
         try {
             const parsed = JSON.parse(raw);
-            return {
+            const hydrated = {
                 ...defaults,
                 ...parsed,
                 steps: { ...defaults.steps, ...(parsed.steps || {}) },
                 config: { ...defaults.config, ...(parsed.config || {}) },
                 errors: { ...defaults.errors, ...(parsed.errors || {}) }
             };
+            hydrated.config.openrouterKey = '';
+            hydrated.config.atlasKey = '';
+            return hydrated;
         } catch (e) {
             return defaults;
         }
     }
 
     function persist() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        const safeState = JSON.parse(JSON.stringify(state));
+        safeState.config.openrouterKey = '';
+        safeState.config.atlasKey = '';
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(safeState));
     }
 
     function setStep(step, status, errorMessage) {
@@ -356,8 +364,8 @@
         document.getElementById('textProvider').value = state.config.defaultTextProvider || 'openrouter';
 
         const banner = document.getElementById('configBanner');
-        const needsOpenRouter = !state.config.openrouterKey;
-        const needsAtlas = !state.config.atlasKey || !state.config.atlasUrl || !state.config.atlasModel;
+        const needsOpenRouter = !state.config.openrouterKeySet;
+        const needsAtlas = !state.config.atlasKeySet || !state.config.atlasUrl || !state.config.atlasModel;
         if (state.setupComplete) {
             banner.className = 'banner banner-success';
             banner.textContent = '✅ Setup complete. OpenRouter is active for text and Atlas for image generation.';
@@ -376,12 +384,12 @@
             text: {
                 provider: state.config.defaultTextProvider || '',
                 model: state.config.defaultTextModel || '',
-                ready: Boolean(state.config.openrouterKey)
+                ready: Boolean(state.config.openrouterKeySet)
             },
             image: {
                 provider: state.config.defaultImageProvider || '',
                 model: state.config.atlasModel || '',
-                ready: Boolean(state.config.atlasKey && state.config.atlasUrl && state.config.atlasModel)
+                ready: Boolean(state.config.atlasKeySet && state.config.atlasUrl && state.config.atlasModel)
             },
             setupComplete: state.setupComplete
         };
@@ -395,6 +403,7 @@
             return showStepError('step1', 'Missing OpenRouter API key. Add OPENROUTER_API_KEY and try again.');
         }
         state.config.openrouterKey = openrouterKey;
+        state.config.openrouterKeySet = true;
         state.config.openrouterModel = openrouterModel;
         state.config.defaultTextProvider = 'openrouter';
         state.config.defaultTextModel = openrouterModel;
@@ -411,6 +420,7 @@
             return showStepError('step2', 'Atlas config missing. Add ATLAS_API_KEY, ATLAS_IMAGE_URL, and ATLAS_IMAGE_MODEL.');
         }
         state.config.atlasKey = atlasKey;
+        state.config.atlasKeySet = true;
         state.config.atlasUrl = atlasUrl;
         state.config.atlasModel = atlasModel;
         state.config.defaultImageProvider = 'atlas';
@@ -418,7 +428,7 @@
     }
 
     function saveDefaults() {
-        if (!state.config.openrouterKey) {
+        if (!state.config.openrouterKeySet) {
             return showStepError('step3', 'Configure OpenRouter first in step 1.');
         }
         state.config.defaultTextProvider = document.getElementById('textProvider').value;
@@ -427,6 +437,8 @@
     }
 
     async function runChatTest() {
+        const keyFromInput = document.getElementById('openrouterKey').value.trim();
+        if (keyFromInput) state.config.openrouterKey = keyFromInput;
         if (!state.config.openrouterKey) {
             return showStepError('step4', 'OpenRouter key missing. Complete step 1 first.');
         }
@@ -462,6 +474,8 @@
     }
 
     async function runImageTest() {
+        const keyFromInput = document.getElementById('atlasKey').value.trim();
+        if (keyFromInput) state.config.atlasKey = keyFromInput;
         if (!state.config.atlasKey || !state.config.atlasUrl || !state.config.atlasModel) {
             return showStepError('step5', 'Atlas config missing. Complete step 2 first.');
         }
@@ -529,7 +543,7 @@
     document.getElementById('testImageBtn').addEventListener('click', runImageTest);
     document.getElementById('completeSetupBtn').addEventListener('click', markComplete);
 
-    if (!state.config.openrouterKey || !state.config.atlasKey) state.guideOpen = true;
+    if (!state.config.openrouterKeySet || !state.config.atlasKeySet) state.guideOpen = true;
     render();
 </script>
 </body>
