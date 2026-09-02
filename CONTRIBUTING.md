@@ -2,6 +2,18 @@
 
 Thank you for your interest in contributing! This guide will help you get started.
 
+## 📦 Need to install Project Commander 2 first?
+
+If you only want to **download and install** the app, use the big **Download &amp; Install** button in [README.md](README.md).
+
+## 👶 First-time setup (simple version)
+
+1. Download this project as a ZIP (or clone if you already know Git).
+2. Open the folder on your computer.
+3. Run the app locally.
+
+That's it. You can come back to the rest of this guide when you're ready to contribute code.
+
 ## Code of Conduct
 
 We're committed to providing a welcoming and inclusive environment for all contributors. Please be respectful and kind to everyone.
