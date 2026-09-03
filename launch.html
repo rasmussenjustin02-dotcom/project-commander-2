@@ -3,158 +3,548 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Commander 2 Launcher</title>
+    <title>Project Commander 2 Setup</title>
     <style>
+        :root {
+            --bg: #0d1117;
+            --panel: #161b22;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --muted: #8b949e;
+            --blue: #58a6ff;
+            --green: #238636;
+            --green-soft: #7ee787;
+            --red: #da3633;
+            --yellow: #d29922;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            background-color: #0d1117;
-            color: #c9d1d9;
+            background: var(--bg);
+            color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            padding: 20px;
-            text-align: center;
             margin: 0;
+            padding: 20px;
         }
 
         .container {
-            max-width: 500px;
-            margin: 40px auto;
+            max-width: 960px;
+            margin: 0 auto;
         }
 
         h1 {
-            color: #58a6ff;
-            font-size: 2em;
-            margin-bottom: 10px;
+            color: var(--blue);
+            margin-bottom: 8px;
         }
 
-        .subtitle {
-            color: #7ee787;
-            font-size: 1.2em;
-            margin-bottom: 30px;
+        .subtitle { color: var(--green-soft); margin-top: 0; }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
         }
 
-        .big-button {
-            display: block;
-            background: #238636;
-            color: white;
-            padding: 30px;
-            margin: 20px 0;
+        .top-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        button {
             border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-weight: 600;
             cursor: pointer;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            width: 100%;
-            box-sizing: border-box;
         }
 
-        .big-button:hover {
-            background: #2ea043;
-            transform: scale(1.05);
+        .btn-primary { background: var(--green); color: white; }
+        .btn-secondary { background: #21262d; color: var(--text); border: 1px solid var(--border); }
+        .btn-danger { background: var(--red); color: white; }
+        .btn-small { padding: 8px 10px; font-size: 13px; }
+
+        .banner {
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-weight: 600;
         }
 
-        .big-button:active {
-            transform: scale(0.98);
-        }
+        .banner-warning { border: 1px solid var(--yellow); background: rgba(210, 153, 34, 0.14); }
+        .banner-success { border: 1px solid var(--green); background: rgba(35, 134, 54, 0.14); }
 
-        .info-box {
-            background: #161b22;
-            border: 2px solid #30363d;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: left;
-        }
+        .setup-guide { display: none; }
+        .setup-guide.open { display: block; }
 
-        .info-box h2 {
-            color: #58a6ff;
-            margin-top: 0;
-        }
-
-        .info-box p {
-            margin: 10px 0;
-            line-height: 1.6;
+        .steps {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 12px;
         }
 
         .step {
-            background: rgba(88, 166, 255, 0.1);
-            border-left: 4px solid #58a6ff;
-            padding: 15px;
-            margin: 15px 0;
-            text-align: left;
-            border-radius: 6px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            background: #0f141b;
         }
 
-        .step strong {
-            color: #58a6ff;
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .step-title { font-weight: 700; }
+
+        .status {
+            font-size: 13px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+        }
+
+        .status.pending { color: var(--muted); }
+        .status.running { color: var(--yellow); }
+        .status.success { color: var(--green-soft); border-color: var(--green); }
+        .status.failure { color: #ff7b72; border-color: var(--red); }
+
+        .help { color: var(--muted); margin: 6px 0 10px; font-size: 14px; }
+        .error { color: #ff7b72; margin-top: 8px; font-size: 14px; min-height: 18px; }
+
+        .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+        .field { flex: 1 1 220px; min-width: 180px; }
+
+        label { display: block; font-size: 13px; margin-bottom: 4px; color: var(--muted); }
+        input, select {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #010409;
+            color: var(--text);
+            padding: 10px;
         }
 
         code {
+            color: var(--green-soft);
             background: #010409;
-            padding: 5px 10px;
+            padding: 2px 6px;
             border-radius: 4px;
-            font-family: monospace;
-            color: #7ee787;
         }
 
-        footer {
-            margin-top: 40px;
-            color: #8b949e;
-            font-size: 14px;
-        }
+        .hidden { display: none; }
+        .muted { color: var(--muted); }
     </style>
 </head>
 <body>
+<div class="container">
+    <h1>🛸 Project Commander 2</h1>
+    <p class="subtitle">NOVA Setup Guide (OpenRouter + Atlas)</p>
 
-    <div class="container">
-        <h1>🛸 PROJECT COMMANDER 2</h1>
-        <div class="subtitle">⚡ NOVA AI Assistant Ready</div>
+    <div id="configBanner" class="banner banner-warning hidden"></div>
 
-        <!-- MAIN LAUNCH BUTTON -->
-        <a href="commander.html" class="big-button">
-            🚀 OPEN PROJECT COMMANDER NOW
-        </a>
-
-        <div class="info-box">
-            <h2>✅ For Your Google Pixel 9a</h2>
-            <div class="step">
-                <strong>Step 1:</strong> Tap the big button above ☝️
-            </div>
-            <div class="step">
-                <strong>Step 2:</strong> Project Commander opens immediately
-            </div>
-            <div class="step">
-                <strong>Step 3 (Optional):</strong> 
-                Tap menu (⋮) → "Add to Home Screen" to keep it on your home screen
-            </div>
-        </div>
-
-        <div class="info-box">
-            <h2>💻 For Desktop/Laptop</h2>
-            <p>Same thing - just click the button above!</p>
-            <p>Save this page and you can use it anytime, anywhere.</p>
-        </div>
-
-        <div class="info-box">
-            <h2>📖 What is Project Commander 2?</h2>
-            <p>✅ Organize your projects</p>
-            <p>✅ Chat with NOVA AI</p>
-            <p>✅ Scan and manage files</p>
-            <p>✅ Backup your work</p>
-            <p>✅ Works on any device</p>
-            <p>✅ FREE & Open Source</p>
-        </div>
-
-        <div class="info-box">
-            <h2>❓ Questions?</h2>
-            <p><strong>GitHub:</strong> <code>rasmussenjustin02-dotcom/project-commander-2</code></p>
-            <p>Report bugs or suggest features on GitHub!</p>
-        </div>
-
-        <footer>
-            <p>Project Commander 2 © 2025 | Made for accessibility & community</p>
-        </footer>
+    <div class="card top-actions">
+        <button id="openGuideBtn" class="btn-primary">🧭 Open Setup Guide</button>
+        <button id="toggleGuideBtn" class="btn-secondary">Hide Guide</button>
+        <button id="resetSetupBtn" class="btn-danger">Reset Setup</button>
     </div>
 
+    <section id="setupGuide" class="setup-guide card">
+        <h2>First-run Setup Guide</h2>
+        <p class="muted">Green means complete. Red means action required.</p>
+        <ol class="steps">
+            <li class="step">
+                <div class="step-header">
+                    <span class="step-title">1) Connect OpenRouter API key</span>
+                    <span id="status-step1" class="status pending">Pending</span>
+                </div>
+                <p class="help">Expected env var (server): <code>OPENROUTER_API_KEY</code>. For static/local use, save here:</p>
+                <div class="row">
+                    <div class="field">
+                        <label for="openrouterKey">OpenRouter API Key</label>
+                        <input id="openrouterKey" type="password" placeholder="sk-or-v1-..." />
+                    </div>
+                    <div class="field">
+                        <label for="openrouterModel">OpenRouter Text Model</label>
+                        <input id="openrouterModel" type="text" value="openai/gpt-4o-mini" />
+                    </div>
+                </div>
+                <button id="saveOpenRouterBtn" class="btn-primary btn-small">Configure / Fix this</button>
+                <p id="error-step1" class="error"></p>
+            </li>
+
+            <li class="step">
+                <div class="step-header">
+                    <span class="step-title">2) Connect Atlas image key/config</span>
+                    <span id="status-step2" class="status pending">Pending</span>
+                </div>
+                <p class="help">Expected env vars (server): <code>ATLAS_API_KEY</code>, <code>ATLAS_IMAGE_URL</code>, <code>ATLAS_IMAGE_MODEL</code>.</p>
+                <div class="row">
+                    <div class="field">
+                        <label for="atlasKey">Atlas API Key</label>
+                        <input id="atlasKey" type="password" placeholder="atlas-key" />
+                    </div>
+                    <div class="field">
+                        <label for="atlasUrl">Atlas Image API URL</label>
+                        <input id="atlasUrl" type="text" value="https://api.atlasai.co/v1/images/generations" />
+                    </div>
+                    <div class="field">
+                        <label for="atlasModel">Atlas Image Model</label>
+                        <input id="atlasModel" type="text" value="atlas-image-1" />
+                    </div>
+                </div>
+                <button id="saveAtlasBtn" class="btn-primary btn-small">Configure / Fix this</button>
+                <p id="error-step2" class="error"></p>
+            </li>
+
+            <li class="step">
+                <div class="step-header">
+                    <span class="step-title">3) Select default text model/provider</span>
+                    <span id="status-step3" class="status pending">Pending</span>
+                </div>
+                <p class="help">Defaults are set automatically when keys are configured.</p>
+                <div class="row">
+                    <div class="field">
+                        <label for="textProvider">Default Text Provider</label>
+                        <select id="textProvider">
+                            <option value="openrouter">OpenRouter</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="defaultTextModel">Default Text Model</label>
+                        <input id="defaultTextModel" type="text" value="openai/gpt-4o-mini" />
+                    </div>
+                </div>
+                <button id="saveDefaultsBtn" class="btn-primary btn-small">Save Defaults / Fix this</button>
+                <p id="error-step3" class="error"></p>
+            </li>
+
+            <li class="step">
+                <div class="step-header">
+                    <span class="step-title">4) Run test chat prompt</span>
+                    <span id="status-step4" class="status pending">Pending</span>
+                </div>
+                <p class="help">Runs an OpenRouter completion request. This is your text provider health check.</p>
+                <button id="testChatBtn" class="btn-secondary btn-small">Run Chat Test / Fix this</button>
+                <p id="error-step4" class="error"></p>
+            </li>
+
+            <li class="step">
+                <div class="step-header">
+                    <span class="step-title">5) Run test image generation</span>
+                    <span id="status-step5" class="status pending">Pending</span>
+                </div>
+                <p class="help">Runs an Atlas image generation call. This is your image provider health check.</p>
+                <button id="testImageBtn" class="btn-secondary btn-small">Run Image Test / Fix this</button>
+                <p id="error-step5" class="error"></p>
+            </li>
+
+            <li class="step">
+                <div class="step-header">
+                    <span class="step-title">6) Mark setup complete</span>
+                    <span id="status-step6" class="status pending">Pending</span>
+                </div>
+                <p class="help">All earlier steps must be green first.</p>
+                <button id="completeSetupBtn" class="btn-primary btn-small">Mark Setup Complete / Fix this</button>
+                <p id="error-step6" class="error"></p>
+            </li>
+        </ol>
+    </section>
+
+    <section class="card">
+        <h2>Current defaults</h2>
+        <p id="defaultsSummary" class="muted">Not configured yet.</p>
+    </section>
+</div>
+
+<script>
+    const STORAGE_KEY = 'pc2_setup_state_v1';
+    const stepKeys = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'];
+
+    const state = loadState();
+
+    function loadState() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const defaults = {
+            guideOpen: true,
+            setupComplete: false,
+            steps: {
+                step1: 'pending',
+                step2: 'pending',
+                step3: 'pending',
+                step4: 'pending',
+                step5: 'pending',
+                step6: 'pending'
+            },
+            config: {
+                openrouterKey: '',
+                openrouterKeySet: false,
+                openrouterModel: 'openai/gpt-4o-mini',
+                atlasKey: '',
+                atlasKeySet: false,
+                atlasUrl: 'https://api.atlasai.co/v1/images/generations',
+                atlasModel: 'atlas-image-1',
+                defaultTextProvider: '',
+                defaultTextModel: 'openai/gpt-4o-mini',
+                defaultImageProvider: ''
+            },
+            errors: {}
+        };
+
+        if (!raw) return defaults;
+        try {
+            const parsed = JSON.parse(raw);
+            const hydrated = {
+                ...defaults,
+                ...parsed,
+                steps: { ...defaults.steps, ...(parsed.steps || {}) },
+                config: { ...defaults.config, ...(parsed.config || {}) },
+                errors: { ...defaults.errors, ...(parsed.errors || {}) }
+            };
+            hydrated.config.openrouterKey = '';
+            hydrated.config.atlasKey = '';
+            return hydrated;
+        } catch (e) {
+            return defaults;
+        }
+    }
+
+    function persist() {
+        const safeState = JSON.parse(JSON.stringify(state));
+        safeState.config.openrouterKey = '';
+        safeState.config.atlasKey = '';
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(safeState));
+    }
+
+    function setStep(step, status, errorMessage) {
+        state.steps[step] = status;
+        if (errorMessage) state.errors[step] = errorMessage;
+        else delete state.errors[step];
+        persist();
+        render();
+    }
+
+    function showStepError(step, message) {
+        setStep(step, 'failure', message);
+    }
+
+    function statusLabel(status) {
+        if (status === 'success') return 'Success';
+        if (status === 'failure') return 'Failure';
+        if (status === 'running') return 'Running';
+        return 'Pending';
+    }
+
+    function render() {
+        document.getElementById('setupGuide').classList.toggle('open', state.guideOpen);
+        document.getElementById('toggleGuideBtn').textContent = state.guideOpen ? 'Hide Guide' : 'Show Guide';
+
+        stepKeys.forEach((step) => {
+            const status = state.steps[step] || 'pending';
+            const statusNode = document.getElementById(`status-${step}`);
+            statusNode.className = `status ${status}`;
+            statusNode.textContent = statusLabel(status);
+            document.getElementById(`error-${step}`).textContent = state.errors[step] || '';
+        });
+
+        document.getElementById('openrouterModel').value = state.config.openrouterModel || 'openai/gpt-4o-mini';
+        document.getElementById('atlasUrl').value = state.config.atlasUrl || 'https://api.atlasai.co/v1/images/generations';
+        document.getElementById('atlasModel').value = state.config.atlasModel || 'atlas-image-1';
+        document.getElementById('defaultTextModel').value = state.config.defaultTextModel || 'openai/gpt-4o-mini';
+        document.getElementById('textProvider').value = state.config.defaultTextProvider || 'openrouter';
+
+        const banner = document.getElementById('configBanner');
+        const needsOpenRouter = !state.config.openrouterKeySet;
+        const needsAtlas = !state.config.atlasKeySet || !state.config.atlasUrl || !state.config.atlasModel;
+        if (state.setupComplete) {
+            banner.className = 'banner banner-success';
+            banner.textContent = '✅ Setup complete. OpenRouter is active for text and Atlas for image generation.';
+            banner.classList.remove('hidden');
+        } else if (needsOpenRouter || needsAtlas) {
+            banner.className = 'banner banner-warning';
+            banner.textContent = '⚠️ Configuration missing. Open Setup Guide and complete steps 1-2.';
+            banner.classList.remove('hidden');
+        } else {
+            banner.classList.add('hidden');
+        }
+
+        const summary = document.getElementById('defaultsSummary');
+        summary.textContent = `Text: ${state.config.defaultTextProvider || 'not set'} (${state.config.defaultTextModel || 'model not set'}), Image: ${state.config.defaultImageProvider || 'not set'} (${state.config.atlasModel || 'model not set'})`;
+        window.projectCommanderProviders = {
+            text: {
+                provider: state.config.defaultTextProvider || '',
+                model: state.config.defaultTextModel || '',
+                ready: Boolean(state.config.openrouterKeySet)
+            },
+            image: {
+                provider: state.config.defaultImageProvider || '',
+                model: state.config.atlasModel || '',
+                ready: Boolean(state.config.atlasKeySet && state.config.atlasUrl && state.config.atlasModel)
+            },
+            setupComplete: state.setupComplete
+        };
+    }
+
+    function configureOpenRouter() {
+        const openrouterKey = document.getElementById('openrouterKey').value.trim();
+        const openrouterModel = document.getElementById('openrouterModel').value.trim() || 'openai/gpt-4o-mini';
+
+        if (!openrouterKey) {
+            return showStepError('step1', 'Missing OpenRouter API key. Add OPENROUTER_API_KEY and try again.');
+        }
+        state.config.openrouterKey = openrouterKey;
+        state.config.openrouterKeySet = true;
+        state.config.openrouterModel = openrouterModel;
+        state.config.defaultTextProvider = 'openrouter';
+        state.config.defaultTextModel = openrouterModel;
+        setStep('step1', 'success');
+        if (state.steps.step3 === 'pending' || state.steps.step3 === 'failure') setStep('step3', 'success');
+    }
+
+    function configureAtlas() {
+        const atlasKey = document.getElementById('atlasKey').value.trim();
+        const atlasUrl = document.getElementById('atlasUrl').value.trim();
+        const atlasModel = document.getElementById('atlasModel').value.trim();
+
+        if (!atlasKey || !atlasUrl || !atlasModel) {
+            return showStepError('step2', 'Atlas config missing. Add ATLAS_API_KEY, ATLAS_IMAGE_URL, and ATLAS_IMAGE_MODEL.');
+        }
+        state.config.atlasKey = atlasKey;
+        state.config.atlasKeySet = true;
+        state.config.atlasUrl = atlasUrl;
+        state.config.atlasModel = atlasModel;
+        state.config.defaultImageProvider = 'atlas';
+        setStep('step2', 'success');
+    }
+
+    function saveDefaults() {
+        if (!state.config.openrouterKeySet) {
+            return showStepError('step3', 'Configure OpenRouter first in step 1.');
+        }
+        state.config.defaultTextProvider = document.getElementById('textProvider').value;
+        state.config.defaultTextModel = document.getElementById('defaultTextModel').value.trim() || state.config.openrouterModel;
+        setStep('step3', 'success');
+    }
+
+    async function runChatTest() {
+        const keyFromInput = document.getElementById('openrouterKey').value.trim();
+        if (keyFromInput) state.config.openrouterKey = keyFromInput;
+        if (!state.config.openrouterKey) {
+            return showStepError('step4', 'OpenRouter key missing. Complete step 1 first.');
+        }
+
+        setStep('step4', 'running');
+        try {
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + state.config.openrouterKey
+                },
+                body: JSON.stringify({
+                    model: state.config.defaultTextModel || state.config.openrouterModel,
+                    messages: [{ role: 'user', content: 'Reply with exactly: setup-ok' }],
+                    max_tokens: 12
+                })
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.error?.message || `OpenRouter health check failed (${response.status}).`);
+            }
+
+            const output = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || '').toLowerCase();
+            if (!output.includes('setup-ok')) {
+                throw new Error('OpenRouter responded, but test string not found.');
+            }
+            setStep('step4', 'success');
+        } catch (error) {
+            showStepError('step4', error.message || 'OpenRouter test failed.');
+        }
+    }
+
+    async function runImageTest() {
+        const keyFromInput = document.getElementById('atlasKey').value.trim();
+        if (keyFromInput) state.config.atlasKey = keyFromInput;
+        if (!state.config.atlasKey || !state.config.atlasUrl || !state.config.atlasModel) {
+            return showStepError('step5', 'Atlas config missing. Complete step 2 first.');
+        }
+
+        setStep('step5', 'running');
+        try {
+            const response = await fetch(state.config.atlasUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + state.config.atlasKey
+                },
+                body: JSON.stringify({
+                    model: state.config.atlasModel,
+                    prompt: 'small green checkmark'
+                })
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.error?.message || `Atlas health check failed (${response.status}).`);
+            }
+            const hasImage = Array.isArray(data.data) ? data.data.length > 0 : Boolean(data.url || data.image || data.images);
+            if (!hasImage) {
+                throw new Error('Atlas responded, but no image payload was detected.');
+            }
+            setStep('step5', 'success');
+        } catch (error) {
+            showStepError('step5', error.message || 'Atlas test failed.');
+        }
+    }
+
+    function markComplete() {
+        const required = ['step1', 'step2', 'step3', 'step4', 'step5'];
+        const missing = required.filter((s) => state.steps[s] !== 'success');
+        if (missing.length) {
+            return showStepError('step6', `Please fix these steps first: ${missing.join(', ')}.`);
+        }
+        state.setupComplete = true;
+        setStep('step6', 'success');
+    }
+
+    function resetSetup() {
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.reload();
+    }
+
+    document.getElementById('openGuideBtn').addEventListener('click', () => {
+        state.guideOpen = true;
+        persist();
+        render();
+    });
+
+    document.getElementById('toggleGuideBtn').addEventListener('click', () => {
+        state.guideOpen = !state.guideOpen;
+        persist();
+        render();
+    });
+
+    document.getElementById('resetSetupBtn').addEventListener('click', resetSetup);
+    document.getElementById('saveOpenRouterBtn').addEventListener('click', configureOpenRouter);
+    document.getElementById('saveAtlasBtn').addEventListener('click', configureAtlas);
+    document.getElementById('saveDefaultsBtn').addEventListener('click', saveDefaults);
+    document.getElementById('testChatBtn').addEventListener('click', runChatTest);
+    document.getElementById('testImageBtn').addEventListener('click', runImageTest);
+    document.getElementById('completeSetupBtn').addEventListener('click', markComplete);
+
+    if (!state.config.openrouterKeySet || !state.config.atlasKeySet) state.guideOpen = true;
+    render();
+</script>
 </body>
 </html>
