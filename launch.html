@@ -196,11 +196,11 @@
                     </div>
                     <div class="field">
                         <label for="atlasUrl">Atlas Image API URL</label>
-                        <input id="atlasUrl" type="text" value="https://api.atlasai.co/v1/images/generations" />
+                        <input id="atlasUrl" type="text" value="https://api.atlascloud.ai/api/v1/model/generateImage" />
                     </div>
                     <div class="field">
                         <label for="atlasModel">Atlas Image Model</label>
-                        <input id="atlasModel" type="text" value="atlas-image-1" />
+                        <input id="atlasModel" type="text" value="bytedance/seedream-v5.0-pro/edit" />
                     </div>
                 </div>
                 <button id="saveAtlasBtn" class="btn-primary btn-small">Configure / Fix this</button>
@@ -270,8 +270,46 @@
 <script>
     const STORAGE_KEY = 'pc2_setup_state_v1';
     const stepKeys = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'];
+    const DEFAULT_ATLAS_IMAGE_URL = 'https://api.atlascloud.ai/api/v1/model/generateImage';
+    const LEGACY_ATLAS_IMAGE_URL = 'https://api.atlasai.co/v1/images/generations';
+    const DEFAULT_ATLAS_IMAGE_MODEL = 'bytedance/seedream-v5.0-pro/edit';
+    const LEGACY_ATLAS_IMAGE_MODEL = 'atlas-image-1';
+    const ATLAS_PREDICTION_URL = 'https://api.atlascloud.ai/api/v1/model/prediction/';
+    const ATLAS_TEST_IMAGE_URL = 'https://github.githubassets.com/favicons/favicon.png';
+    const ATLAS_POLL_ATTEMPTS = 15;
+    const ATLAS_POLL_DELAY_MS = 2000;
 
     const state = loadState();
+
+    function normalizeAtlasModel(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        if (raw.includes(DEFAULT_ATLAS_IMAGE_MODEL)) return DEFAULT_ATLAS_IMAGE_MODEL;
+        return raw.split(/\s+/)[0];
+    }
+
+    function extractAtlasPayload(data) {
+        return data && typeof data.data === 'object' && data.data ? data.data : (data || {});
+    }
+
+    function getAtlasErrorDetail(data) {
+        return data?.error?.message || data?.message || data?.detail || '';
+    }
+
+    function getAtlasRequestError(stage, status, data) {
+        if (status === 401 || status === 403) {
+            return `Atlas auth failed during ${stage} (${status}). Check your Atlas API key and model access.`;
+        }
+
+        const detail = getAtlasErrorDetail(data);
+        const prefix = stage === 'submit' ? 'Atlas submit failed' : 'Atlas polling failed';
+        return detail ? `${prefix} (${status}): ${detail}` : `${prefix} (${status}).`;
+    }
+
+    function getAtlasOutputUrl(data) {
+        const payload = extractAtlasPayload(data);
+        return Array.isArray(payload.outputs) && payload.outputs[0] ? payload.outputs[0] : '';
+    }
 
     function loadState() {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -292,8 +330,8 @@
                 openrouterModel: 'openai/gpt-4o-mini',
                 atlasKey: '',
                 atlasKeySet: false,
-                atlasUrl: 'https://api.atlasai.co/v1/images/generations',
-                atlasModel: 'atlas-image-1',
+                atlasUrl: DEFAULT_ATLAS_IMAGE_URL,
+                atlasModel: DEFAULT_ATLAS_IMAGE_MODEL,
                 defaultTextProvider: '',
                 defaultTextModel: 'openai/gpt-4o-mini',
                 defaultImageProvider: ''
@@ -313,6 +351,13 @@
             };
             hydrated.config.openrouterKey = '';
             hydrated.config.atlasKey = '';
+            if (!hydrated.config.atlasUrl || hydrated.config.atlasUrl === LEGACY_ATLAS_IMAGE_URL) {
+                hydrated.config.atlasUrl = DEFAULT_ATLAS_IMAGE_URL;
+            }
+            hydrated.config.atlasModel = normalizeAtlasModel(hydrated.config.atlasModel);
+            if (!hydrated.config.atlasModel || hydrated.config.atlasModel === LEGACY_ATLAS_IMAGE_MODEL) {
+                hydrated.config.atlasModel = DEFAULT_ATLAS_IMAGE_MODEL;
+            }
             return hydrated;
         } catch (e) {
             return defaults;
@@ -358,8 +403,8 @@
         });
 
         document.getElementById('openrouterModel').value = state.config.openrouterModel || 'openai/gpt-4o-mini';
-        document.getElementById('atlasUrl').value = state.config.atlasUrl || 'https://api.atlasai.co/v1/images/generations';
-        document.getElementById('atlasModel').value = state.config.atlasModel || 'atlas-image-1';
+        document.getElementById('atlasUrl').value = state.config.atlasUrl || DEFAULT_ATLAS_IMAGE_URL;
+        document.getElementById('atlasModel').value = state.config.atlasModel || DEFAULT_ATLAS_IMAGE_MODEL;
         document.getElementById('defaultTextModel').value = state.config.defaultTextModel || 'openai/gpt-4o-mini';
         document.getElementById('textProvider').value = state.config.defaultTextProvider || 'openrouter';
 
@@ -414,11 +459,12 @@
     function configureAtlas() {
         const atlasKey = document.getElementById('atlasKey').value.trim();
         const atlasUrl = document.getElementById('atlasUrl').value.trim();
-        const atlasModel = document.getElementById('atlasModel').value.trim();
+        const atlasModel = normalizeAtlasModel(document.getElementById('atlasModel').value);
 
         if (!atlasKey || !atlasUrl || !atlasModel) {
             return showStepError('step2', 'Atlas config missing. Add ATLAS_API_KEY, ATLAS_IMAGE_URL, and ATLAS_IMAGE_MODEL.');
         }
+        document.getElementById('atlasModel').value = atlasModel;
         state.config.atlasKey = atlasKey;
         state.config.atlasKeySet = true;
         state.config.atlasUrl = atlasUrl;
@@ -490,19 +536,65 @@
                 },
                 body: JSON.stringify({
                     model: state.config.atlasModel,
-                    prompt: 'small green checkmark'
+                    prompt: 'Create a tiny green checkmark icon.',
+                    images: [ATLAS_TEST_IMAGE_URL]
                 })
             });
 
             const data = await response.json().catch(() => ({}));
             if (!response.ok) {
-                throw new Error(data.error?.message || `Atlas health check failed (${response.status}).`);
+                throw new Error(getAtlasRequestError('submit', response.status, data));
             }
-            const hasImage = Array.isArray(data.data) ? data.data.length > 0 : Boolean(data.url || data.image || data.images);
-            if (!hasImage) {
-                throw new Error('Atlas responded, but no image payload was detected.');
+
+            const submitPayload = extractAtlasPayload(data);
+            const immediateOutput = getAtlasOutputUrl(data);
+            const submitStatus = String(submitPayload.status || '').toLowerCase();
+            if (immediateOutput && (submitStatus === 'completed' || submitStatus === 'succeeded' || !submitStatus)) {
+                setStep('step5', 'success');
+                return;
             }
-            setStep('step5', 'success');
+            if (submitStatus === 'failed') {
+                throw new Error(`Atlas submit failed: ${getAtlasErrorDetail(submitPayload) || 'generation request was rejected.'}`);
+            }
+
+            const predictionId = submitPayload.id || data.id;
+            if (!predictionId) {
+                throw new Error('Atlas submit failed: response did not include a prediction id.');
+            }
+
+            let lastStatus = submitStatus || 'submitted';
+            for (let attempt = 0; attempt < ATLAS_POLL_ATTEMPTS; attempt += 1) {
+                await new Promise((resolve) => setTimeout(resolve, ATLAS_POLL_DELAY_MS));
+
+                const pollResponse = await fetch(ATLAS_PREDICTION_URL + encodeURIComponent(predictionId), {
+                    headers: {
+                        'Authorization': 'Bearer ' + state.config.atlasKey
+                    }
+                });
+                const pollData = await pollResponse.json().catch(() => ({}));
+                if (!pollResponse.ok) {
+                    throw new Error(getAtlasRequestError('poll', pollResponse.status, pollData));
+                }
+
+                const prediction = extractAtlasPayload(pollData);
+                const status = String(prediction.status || '').toLowerCase();
+                if (status) lastStatus = status;
+
+                if (status === 'failed') {
+                    throw new Error(`Atlas generation failed while polling: ${getAtlasErrorDetail(prediction) || 'prediction status returned failed.'}`);
+                }
+
+                if (status === 'completed' || status === 'succeeded') {
+                    const outputUrl = getAtlasOutputUrl(prediction);
+                    if (!outputUrl) {
+                        throw new Error('Atlas completed the prediction, but outputs[0] was missing.');
+                    }
+                    setStep('step5', 'success');
+                    return;
+                }
+            }
+
+            throw new Error(`Atlas polling timed out after ${ATLAS_POLL_ATTEMPTS * ATLAS_POLL_DELAY_MS / 1000} seconds. Last status: ${lastStatus}.`);
         } catch (error) {
             showStepError('step5', error.message || 'Atlas test failed.');
         }
