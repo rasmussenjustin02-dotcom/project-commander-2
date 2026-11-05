@@ -3,32 +3,8 @@ AI-powered project management tool with NOVA persona - organize, complete, and b
 
 ## First-run Setup Guide
 
-Open `launch.html` and complete the in-app staged Setup Guide:
+Open `launch.html` and follow the steps to enter an OpenRouter API key, choose a model, test chat, and finish setup. The key is held only in the current page's memory; it is not saved in browser storage and must be entered again after a reload. The selected model ID and guide visibility are saved in browser storage.
 
-1. Connect OpenRouter API key
-2. Connect Atlas image key/config
-3. Select default text model/provider
-4. Run test chat prompt
-5. Run test image generation
-6. Mark setup complete
+The setup page sends chat requests directly from the browser to OpenRouter. Use it only for private local testing, not on a public or shared site. A deployed app should send requests through a backend that reads `OPENROUTER_API_KEY` from its server-side environment; do not put real keys in source files or commit them.
 
-Each step shows status:
-- Pending
-- Running
-- Success (green)
-- Failure (red, with fix message)
-
-Setup progress is saved in browser local storage and survives page reloads.
-
-## Environment Variable Reference
-
-Expected server-side environment variables:
-
-- `OPENROUTER_API_KEY`
-- `ATLAS_API_KEY`
-- `ATLAS_IMAGE_URL`
-- `ATLAS_IMAGE_MODEL`
-
-When configured:
-- OpenRouter is the default text/chat provider.
-- Atlas is the default image provider.
+The current setup guide supports OpenRouter chat only. Atlas image generation and Hugging Face are not configured by this page.
