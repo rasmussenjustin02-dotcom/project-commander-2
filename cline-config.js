@@ -1,25 +1,35 @@
 /**
  * Project Commander 2 - Cline AI Agent Integration
- * 
- * This module bridges Project Commander 2 setup with Cline (VS Code AI agent).
- * It exposes configured API keys and provider settings for Cline to use.
- * 
+ *
+ * Bridges Project Commander 2 setup with Cline (VS Code AI agent).
+ * OpenRouter is the only provider. The API key is read at runtime from
+ * the OPENROUTER_API_KEY environment variable or from the same field on
+ * the saved setup state. Keys are never written by this file.
+ *
  * Usage in Cline:
  * 1. Load this file in your Cline initialization
  * 2. Access providers via window.projectCommanderProviders
- * 3. Use credentials from localStorage when this script is loaded
+ * 3. Model selection comes from setup state in localStorage when this script is loaded
  */
 
-// Load Project Commander 2 configuration from browser storage
-const STORAGE_KEY = 'pc2_setup_state_v3';
+const STORAGE_KEY = 'pc2_setup_state_v5';
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+const DEFAULT_MODEL = 'openai/gpt-4o-mini';
 
-function getProjectCommanderConfig() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    console.warn('Project Commander 2 not configured. Run launch.html setup first.');
+function readSetupStateRaw() {
+  try {
+    if (typeof localStorage === 'undefined' || !localStorage) return null;
+    return localStorage.getItem(STORAGE_KEY);
+  } catch (e) {
+    console.warn('Project Commander 2 setup state is not readable.', e);
     return null;
   }
-  
+}
+
+function getProjectCommanderConfig() {
+  const raw = readSetupStateRaw();
+  if (!raw) return null;
+
   try {
     return JSON.parse(raw);
   } catch (e) {
@@ -28,45 +38,48 @@ function getProjectCommanderConfig() {
   }
 }
 
+function readOpenRouterApiKey(setupState) {
+  const fromEnv = (typeof process !== 'undefined' && process.env && process.env.OPENROUTER_API_KEY) || '';
+  const fromSetup = (setupState && (setupState.OPENROUTER_API_KEY || (setupState.config && setupState.config.OPENROUTER_API_KEY))) || '';
+  const key = String(fromEnv || fromSetup).trim();
+  return key || null;
+}
+
+function readModel(setupState) {
+  if (!setupState) return DEFAULT_MODEL;
+  return setupState.defaultTextModel
+    || (setupState.config && setupState.config.defaultTextModel)
+    || DEFAULT_MODEL;
+}
+
+function readSetupComplete(setupState) {
+  if (!setupState) return false;
+  if (typeof setupState.setupComplete === 'boolean') return setupState.setupComplete;
+  if (setupState.config && typeof setupState.config.setupComplete === 'boolean') return setupState.config.setupComplete;
+  return false;
+}
+
 function buildClineProviderConfig() {
-  const config = getProjectCommanderConfig();
-  if (!config) return null;
+  const setupState = getProjectCommanderConfig();
+  const apiKey = readOpenRouterApiKey(setupState);
+  if (!setupState && !apiKey) return null;
+
+  const model = readModel(setupState);
 
   return {
-    // OrcRouter - Primary text/AI provider
-    orcrouter: {
-      name: 'OrcRouter',
+    openrouter: {
+      name: 'OpenRouter',
       type: 'text-chat',
-      model: config.config.orcrouterModel || 'qwen-3.8-27b-obsidian',
-      endpoint: 'https://www.orcrouter.ai/api/v1/chat/completions',
-      apiKey: config.config.orcrouterKey || null,
-      isConfigured: config.config.orcrouterKeySet,
+      model: model,
+      endpoint: OPENROUTER_BASE_URL,
+      apiKey: apiKey,
+      isConfigured: Boolean(apiKey),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': config.config.orcrouterKey ? `Bearer ${config.config.orcrouterKey}` : null
+        'Authorization': apiKey ? `Bearer ${apiKey}` : null
       }
     },
-
-    // Venice AI - Image + Video provider
-    venice: {
-      name: 'Venice AI',
-      type: 'multi-modal',
-      textModel: 'venice-uncensored',
-      imageModel: config.config.veniceImageModel || 'venice-2-image-gen',
-      videoModel: config.config.veniceVideoModel || 'venice-2-video-gen',
-      endpoint: 'https://api.venice.ai/api/v1/chat/completions',
-      imageEndpoint: 'https://api.venice.ai/api/v1/images/generations',
-      videoEndpoint: 'https://api.venice.ai/api/v1/videos/generations',
-      apiKey: config.config.veniceKey || null,
-      isConfigured: config.config.veniceKeySet,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': config.config.veniceKey ? `Bearer ${config.config.veniceKey}` : null
-      }
-    },
-
-    // Setup completion status
-    setupComplete: config.setupComplete,
+    setupComplete: readSetupComplete(setupState),
     lastUpdated: new Date().toISOString()
   };
 }
@@ -78,12 +91,12 @@ function buildClineProviderConfig() {
 if (typeof window !== 'undefined') {
   window.projectCommanderProviders = buildClineProviderConfig() || {
     setupComplete: false,
-    orcrouter: null,
-    venice: null
+    openrouter: null
   };
 
-  console.log('✅ Project Commander 2 - Cline Integration Ready');
-  console.log('Providers:', window.projectCommanderProviders);
+  const openrouter = window.projectCommanderProviders.openrouter;
+  console.log('Project Commander 2 - Cline integration ready');
+  console.log('OpenRouter:', openrouter ? { model: openrouter.model, isConfigured: openrouter.isConfigured } : null);
 }
 
 /**
@@ -97,82 +110,36 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 /**
- * Helper: Get OrcRouter config for text/chat
+ * Helper: Get OpenRouter config for text/chat
  */
-function getOrcRouterConfig() {
-  const providers = window.projectCommanderProviders;
-  if (!providers || !providers.orcrouter || !providers.orcrouter.isConfigured) {
-    throw new Error('OrcRouter not configured. Run Project Commander 2 setup first.');
+function getOpenRouterConfig() {
+  const providers = typeof window !== 'undefined' ? window.projectCommanderProviders : buildClineProviderConfig();
+  if (!providers || !providers.openrouter || !providers.openrouter.isConfigured) {
+    throw new Error('OpenRouter not configured. Set OPENROUTER_API_KEY and run Project Commander 2 setup first.');
   }
-  return providers.orcrouter;
-}
-
-/**
- * Helper: Get Venice config for image generation
- */
-function getVeniceImageConfig() {
-  const providers = window.projectCommanderProviders;
-  if (!providers || !providers.venice || !providers.venice.isConfigured) {
-    throw new Error('Venice AI not configured. Run Project Commander 2 setup first.');
-  }
-  return {
-    endpoint: providers.venice.imageEndpoint,
-    model: providers.venice.imageModel,
-    apiKey: providers.venice.apiKey,
-    headers: providers.venice.headers
-  };
-}
-
-/**
- * Helper: Get Venice config for video generation
- */
-function getVeniceVideoConfig() {
-  const providers = window.projectCommanderProviders;
-  if (!providers || !providers.venice || !providers.venice.isConfigured) {
-    throw new Error('Venice AI not configured. Run Project Commander 2 setup first.');
-  }
-  return {
-    endpoint: providers.venice.videoEndpoint,
-    model: providers.venice.videoModel,
-    apiKey: providers.venice.apiKey,
-    headers: providers.venice.headers
-  };
+  return providers.openrouter;
 }
 
 /**
  * Cline Integration Examples
- * 
- * Example 1: Use OrcRouter for chat in Cline
+ *
+ * Example 1: Use OpenRouter for chat in Cline
  * ```javascript
- * const orcConfig = getOrcRouterConfig();
- * const response = await fetch(orcConfig.endpoint, {
+ * const openRouterConfig = getOpenRouterConfig();
+ * const response = await fetch(openRouterConfig.endpoint + '/chat/completions', {
  *   method: 'POST',
- *   headers: orcConfig.headers,
+ *   headers: openRouterConfig.headers,
  *   body: JSON.stringify({
- *     model: orcConfig.model,
+ *     model: openRouterConfig.model,
  *     messages: userMessages
  *   })
  * });
  * ```
- * 
- * Example 2: Use Venice for image generation in Cline
- * ```javascript
- * const imageConfig = getVeniceImageConfig();
- * const response = await fetch(imageConfig.endpoint, {
- *   method: 'POST',
- *   headers: imageConfig.headers,
- *   body: JSON.stringify({
- *     model: imageConfig.model,
- *     prompt: 'A beautiful landscape'
- *   })
- * });
- * ```
- * 
- * Example 3: Check if everything is configured
+ *
+ * Example 2: Check if setup is complete
  * ```javascript
  * if (window.projectCommanderProviders.setupComplete) {
- *   // All providers are ready
- *   console.log('Ready to use OrcRouter and Venice');
+ *   console.log('OpenRouter setup is complete');
  * } else {
  *   console.log('Run Project Commander 2 setup first');
  * }
