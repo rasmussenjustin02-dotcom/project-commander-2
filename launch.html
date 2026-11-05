@@ -149,7 +149,7 @@
 <body>
 <div class="container">
     <h1>🛸 Project Commander 2</h1>
-    <p class="subtitle">NOVA Setup Guide (Qwen via DashScope)</p>
+    <p class="subtitle">NOVA Setup Guide (OpenRouter)</p>
 
     <div id="configBanner" class="banner banner-warning hidden"></div>
 
@@ -162,95 +162,55 @@
     <section id="setupGuide" class="setup-guide card">
         <h2>First-run Setup Guide</h2>
         <p class="muted">Green means complete. Red means action required.</p>
+        <p class="help">This setup tests OpenRouter chat only. For local testing, the key stays in this page’s memory and is sent directly to OpenRouter. Do not use this page on a public or shared site.</p>
         <ol class="steps">
             <li class="step">
                 <div class="step-header">
-                    <span class="step-title">1) Connect Qwen API key</span>
+                    <span class="step-title">1) Connect your OpenRouter API key</span>
                     <span id="status-step1" class="status pending">Pending</span>
                 </div>
-                <p class="help">Expected env var (server): <code>QWEN_API_KEY</code>. One Qwen key covers chat, image understanding, image generation, and video generation.</p>
                 <div class="row">
                     <div class="field">
-                        <label for="qwenKey">Qwen API Key</label>
-                        <input id="qwenKey" type="password" placeholder="sk-..." />
-                    </div>
-                    <div class="field">
-                        <label for="qwenChatModel">Chat/Text Model</label>
-                        <input id="qwenChatModel" type="text" value="qwen-plus" />
+                        <label for="openRouterKey">OpenRouter API Key</label>
+                        <input id="openRouterKey" type="password" placeholder="Paste your OpenRouter key" autocomplete="off" />
                     </div>
                 </div>
-                <button id="saveQwenBtn" class="btn-primary btn-small">Configure / Fix this</button>
+                <button id="saveOpenRouterBtn" class="btn-primary btn-small">Use OpenRouter Key</button>
                 <p id="error-step1" class="error"></p>
             </li>
 
             <li class="step">
                 <div class="step-header">
-                    <span class="step-title">2) Configure Qwen image/video models</span>
+                    <span class="step-title">2) Choose a chat model</span>
                     <span id="status-step2" class="status pending">Pending</span>
                 </div>
-                <p class="help">Expected env vars (server): <code>QWEN_VISION_MODEL</code>, <code>QWEN_IMAGE_MODEL</code>, <code>QWEN_VIDEO_MODEL</code>.</p>
+                <p class="help">Enter an OpenRouter model ID available to your account, such as <code>openai/gpt-4o-mini</code>.</p>
                 <div class="row">
                     <div class="field">
-                        <label for="qwenVisionModel">Image Understanding Model</label>
-                        <input id="qwenVisionModel" type="text" value="qwen-vl-plus" />
-                    </div>
-                    <div class="field">
-                        <label for="qwenImageModel">Image Generation Model</label>
-                        <input id="qwenImageModel" type="text" value="qwen-image-3.0" />
-                    </div>
-                    <div class="field">
-                        <label for="qwenVideoModel">Video Generation Model</label>
-                        <input id="qwenVideoModel" type="text" value="qwen-video-3.0" />
+                        <label for="openRouterModel">OpenRouter Model ID</label>
+                        <input id="openRouterModel" type="text" value="openai/gpt-4o-mini" />
                     </div>
                 </div>
-                <button id="saveQwenModelsBtn" class="btn-primary btn-small">Configure / Fix this</button>
+                <button id="saveModelBtn" class="btn-primary btn-small">Save Chat Model</button>
                 <p id="error-step2" class="error"></p>
             </li>
 
             <li class="step">
                 <div class="step-header">
-                    <span class="step-title">3) Select default chat model</span>
+                    <span class="step-title">3) Test OpenRouter chat</span>
                     <span id="status-step3" class="status pending">Pending</span>
                 </div>
-                <p class="help">Defaults are set automatically when Qwen is configured.</p>
-                <div class="row">
-                    <div class="field">
-                        <label for="defaultTextModel">Default Text Model</label>
-                        <input id="defaultTextModel" type="text" value="qwen-plus" />
-                    </div>
-                </div>
-                <button id="saveDefaultsBtn" class="btn-primary btn-small">Save Defaults / Fix this</button>
+                <button id="testChatBtn" class="btn-secondary btn-small">Run Chat Test</button>
                 <p id="error-step3" class="error"></p>
             </li>
 
             <li class="step">
                 <div class="step-header">
-                    <span class="step-title">4) Run test chat prompt</span>
+                    <span class="step-title">4) Finish setup</span>
                     <span id="status-step4" class="status pending">Pending</span>
                 </div>
-                <p class="help">Runs a Qwen chat completion request using your configured chat/text model.</p>
-                <button id="testChatBtn" class="btn-secondary btn-small">Run Chat Test / Fix this</button>
+                <button id="completeSetupBtn" class="btn-primary btn-small">Mark Setup Complete</button>
                 <p id="error-step4" class="error"></p>
-            </li>
-
-            <li class="step">
-                <div class="step-header">
-                    <span class="step-title">5) Run image understanding test</span>
-                    <span id="status-step5" class="status pending">Pending</span>
-                </div>
-                <p class="help">Sends text + image to your configured Qwen image-understanding model.</p>
-                <button id="testVisionBtn" class="btn-secondary btn-small">Run Vision Test / Fix this</button>
-                <p id="error-step5" class="error"></p>
-            </li>
-
-            <li class="step">
-                <div class="step-header">
-                    <span class="step-title">6) Validate image/video model readiness</span>
-                    <span id="status-step6" class="status pending">Pending</span>
-                </div>
-                <p class="help">Checks that image and video generation models are configured for Qwen.</p>
-                <button id="validateMediaBtn" class="btn-primary btn-small">Validate Media Config / Fix this</button>
-                <p id="error-step6" class="error"></p>
             </li>
         </ol>
     </section>
@@ -262,62 +222,35 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'pc2_setup_state_v4';
-    const stepKeys = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'];
-    const QWEN_CHAT_ENDPOINT = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
-    const SAMPLE_IMAGE_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5mYmkAAAAASUVORK5CYII=';
-
-    const state = loadState();
-
-    function loadState() {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const defaults = {
-            guideOpen: true,
-            setupComplete: false,
-            steps: {
-                step1: 'pending',
-                step2: 'pending',
-                step3: 'pending',
-                step4: 'pending',
-                step5: 'pending',
-                step6: 'pending'
-            },
-            config: {
-                qwenKey: '',
-                qwenKeySet: false,
-                qwenChatModel: 'qwen-plus',
-                qwenVisionModel: 'qwen-vl-plus',
-                qwenImageModel: 'qwen-image-3.0',
-                qwenVideoModel: 'qwen-video-3.0',
-                defaultTextProvider: 'qwen',
-                defaultTextModel: 'qwen-plus',
-                defaultImageProvider: 'qwen',
-                defaultVideoProvider: 'qwen'
-            },
-            errors: {}
-        };
-
-        if (!raw) return defaults;
-        try {
-            const parsed = JSON.parse(raw);
-            const hydrated = {
-                ...defaults,
-                ...parsed,
-                steps: { ...defaults.steps, ...(parsed.steps || {}) },
-                config: { ...defaults.config, ...(parsed.config || {}) },
-                errors: { ...defaults.errors, ...(parsed.errors || {}) }
-            };
-            hydrated.config.qwenKey = '';
-            return hydrated;
-        } catch (e) {
-            return defaults;
+    const STORAGE_KEY = 'pc2_setup_state_v5';
+    const stepKeys = ['step1', 'step2', 'step3', 'step4'];
+    const OPENROUTER_CHAT_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
+    const state = {
+        guideOpen: true,
+        setupComplete: false,
+        steps: Object.fromEntries(stepKeys.map((step) => [step, 'pending'])),
+        errors: {},
+        config: {
+            openRouterKey: '',
+            openRouterKeySet: false,
+            defaultTextProvider: 'openrouter',
+            defaultTextModel: 'openai/gpt-4o-mini'
         }
+    };
+
+    try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        state.config.defaultTextModel = saved.defaultTextModel || state.config.defaultTextModel;
+        state.guideOpen = saved.guideOpen !== false;
+    } catch (error) {
+        localStorage.removeItem(STORAGE_KEY);
     }
 
     function persist() {
-        const safeState = JSON.parse(JSON.stringify(state));
-        safeState.config.qwenKey = '';
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(safeState));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            defaultTextModel: state.config.defaultTextModel,
+            guideOpen: state.guideOpen
+        }));
     }
 
     function setStep(step, status, errorMessage) {
@@ -344,202 +277,104 @@
         document.getElementById('toggleGuideBtn').textContent = state.guideOpen ? 'Hide Guide' : 'Show Guide';
 
         stepKeys.forEach((step) => {
-            const status = state.steps[step] || 'pending';
+            const status = state.steps[step];
             const statusNode = document.getElementById(`status-${step}`);
             statusNode.className = `status ${status}`;
             statusNode.textContent = statusLabel(status);
             document.getElementById(`error-${step}`).textContent = state.errors[step] || '';
         });
 
-        document.getElementById('qwenChatModel').value = state.config.qwenChatModel || 'qwen-plus';
-        document.getElementById('qwenVisionModel').value = state.config.qwenVisionModel || 'qwen-vl-plus';
-        document.getElementById('qwenImageModel').value = state.config.qwenImageModel || 'qwen-image-3.0';
-        document.getElementById('qwenVideoModel').value = state.config.qwenVideoModel || 'qwen-video-3.0';
-        document.getElementById('defaultTextModel').value = state.config.defaultTextModel || 'qwen-plus';
-
+        document.getElementById('openRouterModel').value = state.config.defaultTextModel;
         const banner = document.getElementById('configBanner');
-        const needsQwenKey = !state.config.qwenKeySet;
-        const needsQwenModels = !state.config.qwenChatModel || !state.config.qwenVisionModel || !state.config.qwenImageModel || !state.config.qwenVideoModel;
-        
         if (state.setupComplete) {
             banner.className = 'banner banner-success';
-            banner.textContent = '✅ Setup complete. Qwen handles text, image understanding, image generation, and video generation.';
-            banner.classList.remove('hidden');
-        } else if (needsQwenKey || needsQwenModels) {
-            banner.className = 'banner banner-warning';
-            banner.textContent = '⚠️ Configuration missing. Open Setup Guide and complete steps 1-2.';
+            banner.textContent = '✅ Setup complete. OpenRouter is configured for chat.';
             banner.classList.remove('hidden');
         } else {
-            banner.classList.add('hidden');
+            banner.className = 'banner banner-warning';
+            banner.textContent = '⚠️ Complete the OpenRouter key, model, and chat test steps.';
+            banner.classList.remove('hidden');
         }
 
-        const summary = document.getElementById('defaultsSummary');
-        summary.textContent = `Provider: qwen | Chat: ${state.config.defaultTextModel || 'model not set'} | Vision: ${state.config.qwenVisionModel || 'model not set'} | Image: ${state.config.qwenImageModel || 'model not set'} | Video: ${state.config.qwenVideoModel || 'model not set'}`;
+        document.getElementById('defaultsSummary').textContent =
+            `Provider: OpenRouter | Chat model: ${state.config.defaultTextModel}`;
         window.projectCommanderProviders = {
             text: {
-                provider: 'qwen',
-                model: state.config.defaultTextModel || 'qwen-plus',
-                ready: Boolean(state.config.qwenKeySet && (state.config.defaultTextModel || state.config.qwenChatModel))
-            },
-            image: {
-                provider: 'qwen',
-                model: state.config.qwenImageModel || 'qwen-image-3.0',
-                ready: Boolean(state.config.qwenKeySet && state.config.qwenImageModel)
-            },
-            video: {
-                provider: 'qwen',
-                model: state.config.qwenVideoModel || 'qwen-video-3.0',
-                ready: Boolean(state.config.qwenKeySet && state.config.qwenVideoModel)
+                provider: 'openrouter',
+                model: state.config.defaultTextModel,
+                ready: Boolean(state.config.openRouterKeySet)
             },
             ai: {
-                provider: 'qwen',
-                model: state.config.defaultTextModel || 'qwen-plus',
-                ready: Boolean(state.config.qwenKeySet)
+                provider: 'openrouter',
+                model: state.config.defaultTextModel,
+                ready: Boolean(state.config.openRouterKeySet)
             },
             setupComplete: state.setupComplete
         };
     }
 
-    function configureQwen() {
-        const qwenKey = document.getElementById('qwenKey').value.trim();
-        const qwenChatModel = document.getElementById('qwenChatModel').value.trim() || 'qwen-plus';
-
-        if (!qwenKey) {
-            return showStepError('step1', 'Missing Qwen API key. Add QWEN_API_KEY and try again.');
-        }
-        state.config.qwenKey = qwenKey;
-        state.config.qwenKeySet = true;
-        state.config.qwenChatModel = qwenChatModel;
-        state.config.defaultTextProvider = 'qwen';
-        state.config.defaultTextModel = qwenChatModel;
+    function configureOpenRouter() {
+        const key = document.getElementById('openRouterKey').value.trim();
+        if (!key) return showStepError('step1', 'Paste your OpenRouter API key to continue.');
+        state.config.openRouterKey = key;
+        state.config.openRouterKeySet = true;
         setStep('step1', 'success');
-        if (state.steps.step3 === 'pending' || state.steps.step3 === 'failure') setStep('step3', 'success');
     }
 
-    function configureQwenModels() {
-        const qwenVisionModel = document.getElementById('qwenVisionModel').value.trim() || 'qwen-vl-plus';
-        const qwenImageModel = document.getElementById('qwenImageModel').value.trim();
-        const qwenVideoModel = document.getElementById('qwenVideoModel').value.trim();
-
-        if (!qwenVisionModel || !qwenImageModel || !qwenVideoModel) {
-            return showStepError('step2', 'Qwen model config missing. Add QWEN_VISION_MODEL, QWEN_IMAGE_MODEL, and QWEN_VIDEO_MODEL.');
+    function saveModel() {
+        if (!state.config.openRouterKeySet) {
+            return showStepError('step2', 'Connect your OpenRouter key first.');
         }
-        state.config.qwenVisionModel = qwenVisionModel;
-        state.config.qwenImageModel = qwenImageModel;
-        state.config.qwenVideoModel = qwenVideoModel;
-        state.config.defaultImageProvider = 'qwen';
-        state.config.defaultVideoProvider = 'qwen';
+        const model = document.getElementById('openRouterModel').value.trim();
+        if (!model) return showStepError('step2', 'Enter an OpenRouter model ID.');
+        state.config.defaultTextModel = model;
         setStep('step2', 'success');
     }
 
-    function saveDefaults() {
-        if (!state.config.qwenKeySet) {
-            return showStepError('step3', 'Configure Qwen first in step 1.');
-        }
-        state.config.defaultTextProvider = 'qwen';
-        state.config.defaultTextModel = document.getElementById('defaultTextModel').value.trim() || state.config.qwenChatModel;
-        setStep('step3', 'success');
-    }
-
     async function runChatTest() {
-        const keyFromInput = document.getElementById('qwenKey').value.trim();
-        if (keyFromInput) state.config.qwenKey = keyFromInput;
-        if (!state.config.qwenKey) {
-            return showStepError('step4', 'Qwen key missing. Complete step 1 first.');
+        if (!state.config.openRouterKey) {
+            return showStepError('step3', 'Connect your OpenRouter key first.');
+        }
+        if (state.steps.step2 !== 'success') {
+            return showStepError('step3', 'Choose and save a chat model first.');
         }
 
-        setStep('step4', 'running');
+        setStep('step3', 'running');
         try {
-            const response = await fetch(QWEN_CHAT_ENDPOINT, {
+            const response = await fetch(OPENROUTER_CHAT_ENDPOINT, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + state.config.qwenKey
+                    'Authorization': 'Bearer ' + state.config.openRouterKey
                 },
                 body: JSON.stringify({
-                    model: state.config.defaultTextModel || state.config.qwenChatModel,
+                    model: state.config.defaultTextModel,
                     messages: [{ role: 'user', content: 'Reply with exactly: setup-ok' }],
                     max_tokens: 12
                 })
             });
-
             const data = await response.json().catch(() => ({}));
             if (!response.ok) {
-                throw new Error(data.error?.message || `Qwen chat health check failed (${response.status}).`);
+                throw new Error(data.error?.message || `OpenRouter chat test failed (${response.status}).`);
             }
-
-            const output = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || '').toLowerCase();
-            if (!output.includes('setup-ok')) {
-                throw new Error('Qwen responded, but test string not found.');
+            const output = data.choices?.[0]?.message?.content || '';
+            if (!output.toLowerCase().includes('setup-ok')) {
+                throw new Error('OpenRouter responded, but the test reply was not found.');
             }
-            setStep('step4', 'success');
+            setStep('step3', 'success');
         } catch (error) {
-            showStepError('step4', error.message || 'Qwen chat test failed.');
+            showStepError('step3', error.message || 'OpenRouter chat test failed.');
         }
     }
 
-    async function runVisionTest() {
-        const keyFromInput = document.getElementById('qwenKey').value.trim();
-        if (keyFromInput) state.config.qwenKey = keyFromInput;
-        if (!state.config.qwenKey) {
-            return showStepError('step5', 'Qwen key missing. Complete step 1 first.');
+    function completeSetup() {
+        const required = ['step1', 'step2', 'step3'];
+        const missing = required.filter((step) => state.steps[step] !== 'success');
+        if (missing.length) {
+            return showStepError('step4', `Complete steps ${missing.map((step) => step.slice(4)).join(', ')} first.`);
         }
-        if (!state.config.qwenVisionModel) {
-            return showStepError('step5', 'Qwen vision model missing. Complete step 2 first.');
-        }
-
-        setStep('step5', 'running');
-        try {
-            const response = await fetch(QWEN_CHAT_ENDPOINT, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + state.config.qwenKey
-                },
-                body: JSON.stringify({
-                    model: state.config.qwenVisionModel,
-                    messages: [{
-                        role: 'user',
-                        content: [
-                            { type: 'text', text: 'Reply with exactly: vision-ok' },
-                            { type: 'image_url', image_url: { url: SAMPLE_IMAGE_DATA_URL } }
-                        ]
-                    }],
-                    max_tokens: 20
-                })
-            });
-
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(data.error?.message || `Qwen vision health check failed (${response.status}).`);
-            }
-
-            const output = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || '').toLowerCase();
-            if (!output.includes('vision-ok')) {
-                throw new Error('Qwen vision responded, but test string not found.');
-            }
-            setStep('step5', 'success');
-        } catch (error) {
-            showStepError('step5', error.message || 'Qwen vision test failed.');
-        }
-    }
-
-    function validateMediaConfig() {
-        const required = ['step1', 'step2', 'step3', 'step4', 'step5'];
-        const missingSteps = required.filter((s) => state.steps[s] !== 'success');
-        if (missingSteps.length) {
-            return showStepError('step6', `Please fix these steps first: ${missingSteps.join(', ')}.`);
-        }
-        const missingModels = [];
-        if (!state.config.qwenImageModel) missingModels.push('QWEN_IMAGE_MODEL');
-        if (!state.config.qwenVideoModel) missingModels.push('QWEN_VIDEO_MODEL');
-        if (missingModels.length) {
-            return showStepError('step6', `Missing media model config: ${missingModels.join(', ')}.`);
-        }
-        state.config.defaultImageProvider = 'qwen';
-        state.config.defaultVideoProvider = 'qwen';
         state.setupComplete = true;
-        setStep('step6', 'success');
+        setStep('step4', 'success');
     }
 
     function resetSetup() {
@@ -552,22 +387,16 @@
         persist();
         render();
     });
-
     document.getElementById('toggleGuideBtn').addEventListener('click', () => {
         state.guideOpen = !state.guideOpen;
         persist();
         render();
     });
-
     document.getElementById('resetSetupBtn').addEventListener('click', resetSetup);
-    document.getElementById('saveQwenBtn').addEventListener('click', configureQwen);
-    document.getElementById('saveQwenModelsBtn').addEventListener('click', configureQwenModels);
-    document.getElementById('saveDefaultsBtn').addEventListener('click', saveDefaults);
+    document.getElementById('saveOpenRouterBtn').addEventListener('click', configureOpenRouter);
+    document.getElementById('saveModelBtn').addEventListener('click', saveModel);
     document.getElementById('testChatBtn').addEventListener('click', runChatTest);
-    document.getElementById('testVisionBtn').addEventListener('click', runVisionTest);
-    document.getElementById('validateMediaBtn').addEventListener('click', validateMediaConfig);
-
-    if (!state.config.qwenKeySet || !state.config.qwenVisionModel || !state.config.qwenImageModel || !state.config.qwenVideoModel) state.guideOpen = true;
+    document.getElementById('completeSetupBtn').addEventListener('click', completeSetup);
     render();
 </script>
 </body>
